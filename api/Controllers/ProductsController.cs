@@ -21,10 +21,18 @@ public class ProductsController : ControllerBase
     // }
 
     // Now we've implemented the StoreContext methods in the ProductRepository class
-    private readonly IProductRepository _repo;
-    public ProductsController(IProductRepository repo)
+    // private readonly IProductRepository _repo;
+    private readonly IGenericRepository<Product> _productsRepo;
+    private readonly IGenericRepository<ProductBrand> _productBrandRepo;
+    private readonly IGenericRepository<ProductType> _productTypeRepo;
+    
+    // public ProductsController(IProductRepository repo)
+    public ProductsController(IGenericRepository<Product> productsRepo, IGenericRepository<ProductBrand> productBrandRepo, IGenericRepository<ProductType> productTypeRepo)
     {
-        _repo = repo;
+        // _repo = repo;
+        _productsRepo = productsRepo;
+        _productBrandRepo = productBrandRepo;
+        _productTypeRepo = productTypeRepo;
     }
 
     // http response status, give us a ResultSet with a list of Product Entities
@@ -36,7 +44,8 @@ public class ProductsController : ControllerBase
         // var products = _context.Products.ToList();
         // The same thing as before but it runs asynchronously
         // var products = await _context.Products.ToListAsync();
-        var products = await _repo.GetProductsAsync();
+        // var products = await _repo.GetProductsAsync();
+        var products = await _productsRepo.GetAllAsync();
         // return "This is a list of Products";
         return Ok(products);
     }
@@ -46,7 +55,7 @@ public class ProductsController : ControllerBase
     {
         // return "This is a product";
         // var products = await _context.Products.FindAsync(id);
-        var products = await _repo.GetProductByIdAsync(id);
+        var products = await _productsRepo.GetByIdAsync(id);
         return Ok(products);
     }
     
@@ -57,7 +66,7 @@ public class ProductsController : ControllerBase
         // var products = _context.Products.ToList();
         // The same thing as before but it runs asynchronously
         // var products = await _context.Products.ToListAsync();
-        var products = await _repo.GetProductBrandsAsync();
+        var products = await _productBrandRepo.GetAllAsync();
         // return "This is a list of Products";
         return Ok(products);
     }
@@ -69,7 +78,8 @@ public class ProductsController : ControllerBase
         // var products = _context.Products.ToList();
         // The same thing as before but it runs asynchronously
         // var products = await _context.Products.ToListAsync();
-        var products = await _repo.GetProductTypesAsync();
+        // var products = await _repo.GetProductTypesAsync();
+        var products = await _productTypeRepo.GetAllAsync();
         // return "This is a list of Products";
         return Ok(products);
     }
