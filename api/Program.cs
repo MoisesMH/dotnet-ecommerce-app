@@ -1,3 +1,4 @@
+using api.Helpers;
 using Core.Interfaces;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,16 +12,18 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // Globally, the methods of IProductRepository implemented in ProductRepository class are available
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddAutoMapper(typeof(MappingProfiles));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddDbContext<StoreContext>(c => {
-    c.UseSqlite(connectionString);
-});
+builder.Services.AddDbContext<StoreContext>(c => 
+    c.UseSqlite(connectionString)
+);
 
 var app = builder.Build();
 
+// To apply migrations to the database automatically: the Microsoft's recommended way
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -29,6 +32,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<StoreContext>();
+        // It'll create the database according to the migrations we have
         await context.Database.MigrateAsync();
         // Seed the data
         await StoreContextSeed.SeedAsync(context, loggerFactory);
@@ -49,6 +53,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 
 app.UseAuthorization();
 
