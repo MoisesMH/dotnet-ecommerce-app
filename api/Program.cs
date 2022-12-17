@@ -1,4 +1,5 @@
 using api.Errors;
+using api.Extensions;
 using api.Helpers;
 using api.Middlewares;
 using Core.Interfaces;
@@ -9,38 +10,15 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Add services to the container.
-// AddScoped creates an instance of our repository for global use and, when the request is done,
-// then it disposes both the controller and the repository
-// Globally, the methods of IProductRepository implemented in ProductRepository class are available
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddAutoMapper(typeof(MappingProfiles));
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<StoreContext>(c => 
     c.UseSqlite(connectionString)
 );
-// Configuring Api behaviour for custom apiController response
-builder.Services.Configure<ApiBehaviorOptions>(options => 
-{
-    options.InvalidModelStateResponseFactory = actionContext =>
-    {
-        var errors = actionContext.ModelState
-            .Where(e => e.Value.Errors.Count > 0)
-            .SelectMany(x => x.Value.Errors)
-            .Select(x => x.ErrorMessage).ToArray();
-
-        var errorResponse = new ApiValidationErrorResponse
-        {
-            Errors = errors
-        };
-
-        return new BadRequestObjectResult(errorResponse);
-    };
-});
+builder.Services.AddAplicationSettings();
+builder.Services.AddSwaggerDocumentation();
 
 var app = builder.Build();
 
@@ -71,8 +49,7 @@ app.UseMiddleware<ExceptionMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerDocumentation();
 }
 
 app.UseStatusCodePagesWithReExecute("/errors/{0}");
