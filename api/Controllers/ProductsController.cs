@@ -11,6 +11,7 @@ using Core.Specifications;
 using api.Dtos;
 using AutoMapper;
 using api.Errors;
+using api.Helpers;
 
 namespace api.Controllers;
 
@@ -45,7 +46,16 @@ public class ProductsController : BaseApiController
     [HttpGet]
     // public async Task<ActionResult<List<Product>>> GetProducts()
     // public async Task<ActionResult<List<ProductToReturnDto>>> GetProducts()
-    public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
+    // public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts()
+    // public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts(string sort, int? brandId, int? typeId)
+    // public async Task<ActionResult<IReadOnlyList<ProductToReturnDto>>> GetProducts(
+    //     // Important to consider params as a string
+    //     [FromQuery] ProductSpecParams productParams
+    // )
+    public async Task<ActionResult<Pagination<ProductToReturnDto>>> GetProducts(
+        // Important to consider params as a string
+        [FromQuery] ProductSpecParams productParams
+    )
     {
         // Give us a set of products belonging to the database
         // var products = _context.Products.ToList();
@@ -55,9 +65,15 @@ public class ProductsController : BaseApiController
         // var products = await _productsRepo.GetAllAsync();
         // Using generic repository
         // Specification method
-        var spec = new ProductsWithTypesAndBrandsSpecification();
+        // var spec = new ProductsWithTypesAndBrandsSpecification(sort, brandId, typeId);
+        var spec = new ProductsWithTypesAndBrandsSpecification(productParams);
+        var countSpec = new ProductWithFiltersForCountSpecification(productParams);
 
+        var totalItems = await _productsRepo.CountAsync(countSpec);
         var products = await _productsRepo.ListAsync(spec);
+
+        var data = _mapper
+            .Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products);
         
         // return "This is a list of Products";
         // return Ok(products);
@@ -72,8 +88,11 @@ public class ProductsController : BaseApiController
         //     ProductType = product.ProductType.Name
         // }).ToList<ProductToReturnDto>();
         // With automapper
-        return Ok(_mapper
-            .Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDto>>(products));
+        return Ok(new Pagination<ProductToReturnDto>(
+            productParams.PageIndex,
+            productParams.PageSize,
+            totalItems,
+            data));
     }
 
     [HttpGet("{id}")]
